@@ -1,0 +1,158 @@
+# 下单示例
+
+这个示例演示如何使用 Polymarket Go SDK 创建和提交订单。
+
+## 环境变量
+
+### 必需变量
+
+- `PRIVATE_KEY`: 你的以太坊私钥（用于签名）
+- `TOKEN_ID`: 条件代币资产ID（例如：从订单簿或市场信息中获取）
+
+### 可选变量
+
+- `CLOB_HOST`: CLOB API 主机地址（默认：`https://clob.polymarket.com`）
+- `CHAIN_ID`: 链ID（默认：`137`，Polygon主网）
+- `SIGNATURE_TYPE`: 签名类型（默认：`0`，EOA）
+  - `0`: EOA（外部拥有账户）
+  - `1`: Magic/Email 钱包
+  - `2`: Browser 钱包代理
+- `FUNDER`: 代理钱包地址（可选，用于代理钱包场景）
+
+### API 凭证（二选一）
+
+**方式1：使用环境变量（推荐）**
+- `CLOB_API_KEY`: API密钥
+- `CLOB_SECRET`: API密钥
+- `CLOB_PASSPHRASE`: API密钥
+
+**方式2：自动创建/派生**
+- 如果未设置上述环境变量，程序会自动尝试派生或创建新的API密钥
+
+## 限价订单
+
+限价订单允许你指定买入或卖出的价格。
+
+### 环境变量
+
+- `ORDER_SIDE`: 订单方向，`BUY` 或 `SELL`（默认：`BUY`）
+- `PRICE`: 订单价格（0-1之间的浮点数，例如：`0.5`）
+- `SIZE`: 条件代币数量（例如：`10.0`）
+- `NONCE`: 用于链上取消的nonce（可选，默认：`0`）
+- `EXPIRATION`: 订单过期时间戳（可选，默认：30天后）
+- `USE_CONVENIENCE`: 是否使用便捷方法（默认：`true`）
+  - `true`: 使用 `CreateAndPostOrder`（一步完成）
+  - `false`: 分步操作（先 `CreateOrder`，再 `PostOrder`）
+
+### 示例
+
+```bash
+# 设置环境变量
+export PRIVATE_KEY="your_private_key"
+export TOKEN_ID="your_token_id"
+export ORDER_SIDE="BUY"
+export PRICE="0.5"
+export SIZE="10.0"
+
+# 运行程序
+go run main.go
+```
+
+## 市价订单
+
+市价订单会以当前市场价格立即执行。
+
+### 环境变量
+
+- `ORDER_TYPE`: 设置为 `MARKET` 以使用市价订单
+- `ORDER_SIDE`: 订单方向，`BUY` 或 `SELL`（默认：`BUY`）
+- `AMOUNT`: 
+  - 如果是 `BUY`：美元金额（例如：`100.0` 表示买入价值100美元的份额）
+  - 如果是 `SELL`：份额数量（例如：`10.0` 表示卖出10个份额）
+- `MARKET_ORDER_TYPE`: 订单类型（默认：`GTC`）
+  - `GTC`: Good Till Cancel（直到取消）
+  - `FOK`: Fill Or Kill（全部成交或取消）
+  - `FAK`: Fill And Kill（部分成交后取消剩余）
+- `NONCE`: 用于链上取消的nonce（可选，默认：`0`）
+
+### 示例
+
+```bash
+# 设置环境变量
+export PRIVATE_KEY="your_private_key"
+export TOKEN_ID="your_token_id"
+export ORDER_TYPE="MARKET"
+export ORDER_SIDE="BUY"
+export AMOUNT="100.0"  # 买入价值100美元的份额
+export MARKET_ORDER_TYPE="GTC"
+
+# 运行程序
+go run main.go
+```
+
+## 完整示例脚本
+
+创建一个 `run.sh` 文件：
+
+```bash
+#!/bin/bash
+
+# 基本配置
+export PRIVATE_KEY="your_private_key"
+export CHAIN_ID="137"
+export CLOB_HOST="https://clob.polymarket.com"
+
+# API凭证（如果已有）
+export CLOB_API_KEY="your_api_key"
+export CLOB_SECRET="your_secret"
+export CLOB_PASSPHRASE="your_passphrase"
+
+# 订单参数
+export TOKEN_ID="your_token_id"
+export ORDER_SIDE="BUY"
+export PRICE="0.5"
+export SIZE="10.0"
+
+# 运行
+go run main.go
+```
+
+然后运行：
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+## 测试脚本
+
+项目包含一个测试脚本 `run_test.sh`，使用预配置的测试参数：
+
+```bash
+# 使用测试脚本（已配置测试私钥、账户类型和代理地址）
+./run_test.sh
+```
+
+测试脚本使用的参数：
+- 私钥：`0xbe8a193f6601e7abfda3293234dd5c0e5486931b7c65ecde432ed1deab0c8993`
+- 账户类型：`1` (Magic/Email 钱包)
+- 代理地址：`0x4E45700535694bEE11F50c82010611AF4c9b76bD`
+
+**注意**：使用测试脚本前，请确保设置 `TOKEN_ID` 和其他订单参数。
+
+## 注意事项
+
+1. **Token ID**: 你需要从订单簿或市场信息中获取正确的 `TOKEN_ID`
+2. **价格验证**: 价格必须在市场的 tick size 范围内
+3. **余额检查**: 确保你的账户有足够的余额来执行订单
+4. **Nonce管理**: 每个订单应该使用唯一的 nonce，建议使用递增的计数器
+5. **订单过期**: 限价订单会在过期时间后自动失效
+
+## 获取 Token ID
+
+你可以通过以下方式获取 Token ID：
+
+1. 从 Polymarket 网站的市场页面
+2. 使用 SDK 的 `GetOrderBook` 方法查询订单簿
+3. 使用 SDK 的 `GetMarkets` 方法查询市场信息
+
