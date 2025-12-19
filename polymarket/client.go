@@ -8,6 +8,7 @@ import (
 
 	obuilder "github.com/0xNetuser/Polymarket-golang/polymarket/order_builder"
 	"github.com/0xNetuser/Polymarket-golang/polymarket/rfq"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // ClobClient CLOB客户端
@@ -210,5 +211,54 @@ func (c *ClobClient) CreateLevel2HeadersInternal(method, path string, body inter
 // GetHost 获取host（供RFQ客户端使用）
 func (c *ClobClient) GetHost() string {
 	return c.host
+}
+
+// GetAPICreds 获取API Key（供RFQ客户端使用）
+func (c *ClobClient) GetAPICreds() string {
+	if c.creds != nil {
+		return c.creds.APIKey
+	}
+	return ""
+}
+
+// CreateOrderForRFQ 为RFQ创建签名订单（供RFQ客户端使用，避免循环导入）
+func (c *ClobClient) CreateOrderForRFQ(args *rfq.OrderCreationArgs) (*rfq.SignedOrderData, error) {
+	// 创建订单参数
+	orderArgs := &OrderArgs{
+		TokenID:    args.TokenID,
+		Price:      args.Price,
+		Size:       args.Size,
+		Side:       args.Side,
+		Expiration: args.Expiration,
+	}
+
+	// 创建签名订单
+	signedOrder, err := c.CreateOrder(orderArgs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// 将 side 转换为字符串
+	sideStr := "BUY"
+	if signedOrder.Side.Int64() == 1 {
+		sideStr = "SELL"
+	}
+
+	// 转换为 RFQ 需要的格式
+	return &rfq.SignedOrderData{
+		Salt:          signedOrder.Salt.Int64(),
+		Maker:         signedOrder.Maker.Hex(),
+		Signer:        signedOrder.Signer.Hex(),
+		Taker:         signedOrder.Taker.Hex(),
+		TokenID:       signedOrder.TokenId.String(),
+		MakerAmount:   signedOrder.MakerAmount.String(),
+		TakerAmount:   signedOrder.TakerAmount.String(),
+		Expiration:    signedOrder.Expiration.String(),
+		Nonce:         signedOrder.Nonce.String(),
+		FeeRateBps:    signedOrder.FeeRateBps.String(),
+		Side:          sideStr,
+		SignatureType: int(signedOrder.SignatureType.Int64()),
+		Signature:     "0x" + common.Bytes2Hex(signedOrder.Signature),
+	}, nil
 }
 
