@@ -214,3 +214,42 @@ func CreateLevel2Headers(signer *Signer, creds *ApiCreds, requestArgs *RequestAr
 	}, nil
 }
 
+// Builder header 常量
+const (
+	PolyBuilderAPIKey     = "POLY_BUILDER_API_KEY"
+	PolyBuilderPassphrase = "POLY_BUILDER_PASSPHRASE"
+	PolyBuilderSignature  = "POLY_BUILDER_SIGNATURE"
+	PolyBuilderTimestamp  = "POLY_BUILDER_TIMESTAMP"
+)
+
+// CreateBuilderHeaders 创建 Builder 认证头（用于 Gasless 交易）
+func CreateBuilderHeaders(creds *ApiCreds, requestArgs *RequestArgs) (map[string]string, error) {
+	timestamp := int(time.Now().Unix())
+
+	// 优先使用预序列化的body
+	var bodyForSig interface{}
+	if requestArgs.SerializedBody != nil {
+		bodyForSig = *requestArgs.SerializedBody
+	} else {
+		bodyForSig = requestArgs.Body
+	}
+
+	hmacSig, err := BuildHMACSignature(
+		creds.APISecret,
+		timestamp,
+		requestArgs.Method,
+		requestArgs.RequestPath,
+		bodyForSig,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		PolyBuilderSignature:  hmacSig,
+		PolyBuilderTimestamp:  strconv.Itoa(timestamp),
+		PolyBuilderAPIKey:     creds.APIKey,
+		PolyBuilderPassphrase: creds.APIPassphrase,
+	}, nil
+}
+

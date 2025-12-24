@@ -208,6 +208,62 @@ result, err := client.CreateAndPostOrder(orderArgs, options)
 | `FAK` | Fill And Kill - partial fill, cancel remaining |
 | `GTD` | Good Till Date - expires at specified time (requires `Expiration`) |
 
+## Web3 Clients
+
+The SDK includes two Web3 clients for on-chain operations:
+
+### PolymarketWeb3Client (Pay Gas)
+
+```go
+import "github.com/0xNetuser/Polymarket-golang/polymarket/web3"
+
+// Create Web3 client (pays gas for transactions)
+client, err := web3.NewPolymarketWeb3Client(
+    "your-private-key",
+    web3.SignatureTypePolyProxy, // 0=EOA, 1=PolyProxy, 2=Safe
+    137,                         // Chain ID
+    "",                          // RPC URL (empty = default)
+)
+
+// Get balances
+polBalance, _ := client.GetPOLBalance()
+usdcBalance, _ := client.GetUSDCBalance(common.Address{})
+tokenBalance, _ := client.GetTokenBalance("token-id", common.Address{})
+
+// Set all necessary approvals
+receipts, _ := client.SetAllApprovals()
+
+// Split USDC into positions
+receipt, _ := client.SplitPosition(conditionID, 100.0, true) // negRisk=true
+
+// Merge positions back to USDC
+receipt, _ := client.MergePosition(conditionID, 100.0, true)
+
+// Transfer USDC
+receipt, _ := client.TransferUSDC(recipient, 50.0)
+
+// Transfer conditional tokens
+receipt, _ := client.TransferToken("token-id", recipient, 50.0)
+```
+
+### PolymarketGaslessWeb3Client (No Gas)
+
+```go
+// Create Gasless Web3 client (transactions via relay, no gas required)
+// Only supports signature_type=1 (PolyProxy) or signature_type=2 (Safe)
+client, err := web3.NewPolymarketGaslessWeb3Client(
+    "your-private-key",
+    web3.SignatureTypePolyProxy,
+    nil,  // Optional: builder credentials
+    137,
+    "",
+)
+
+// Same operations as PolymarketWeb3Client
+receipt, _ := client.SplitPosition(conditionID, 100.0, true)
+receipt, _ := client.MergePosition(conditionID, 100.0, true)
+```
+
 ## Project Structure
 
 ```
@@ -233,9 +289,17 @@ polymarket/
 ├── order_builder/             # Order builder
 │   ├── order_builder.go       # Order builder implementation
 │   └── helpers.go             # Order builder helper functions
-└── rfq/                       # RFQ client
-    ├── rfq_client.go          # RFQ client implementation
-    └── types.go               # RFQ type definitions
+├── rfq/                       # RFQ client
+│   ├── rfq_client.go          # RFQ client implementation
+│   └── types.go               # RFQ type definitions
+└── web3/                      # Web3 clients for on-chain operations
+    ├── base_client.go         # Base Web3 client (shared logic)
+    ├── web3_client.go         # PolymarketWeb3Client (pay gas)
+    ├── gasless_client.go      # PolymarketGaslessWeb3Client (no gas)
+    ├── types.go               # Web3 type definitions
+    ├── helpers.go             # Web3 helper functions
+    ├── abi_loader.go          # ABI loading utilities
+    └── abis/                   # Contract ABI files
 ```
 
 ## Implemented Features
@@ -277,6 +341,18 @@ polymarket/
 
 ### ✅ RFQ Client Features
 - [x] `CreateRfqRequest()` - Create RFQ request
+
+### ✅ Web3 Client Features
+- [x] `PolymarketWeb3Client` - On-chain transactions (pays gas)
+  - [x] Supports EOA, PolyProxy, and Safe wallets
+  - [x] Balance queries (POL, USDC, conditional tokens)
+  - [x] Approval management (`SetAllApprovals()`)
+  - [x] Position operations (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `ConvertPositions()`)
+  - [x] Token transfers (`TransferUSDC()`, `TransferToken()`)
+- [x] `PolymarketGaslessWeb3Client` - Gasless transactions via relay
+  - [x] Supports PolyProxy and Safe wallets
+  - [x] Same operations as Web3Client without gas fees
+  - [x] **Requires Builder credentials** (obtained from Polymarket)
 - [x] `CancelRfqRequest()` - Cancel RFQ request
 - [x] `GetRfqRequests()` - Get RFQ request list
 - [x] `CreateRfqQuote()` - Create RFQ quote

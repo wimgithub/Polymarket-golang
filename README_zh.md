@@ -208,6 +208,62 @@ result, err := client.CreateAndPostOrder(orderArgs, options)
 | `FAK` | Fill And Kill - 部分成交后取消剩余 |
 | `GTD` | Good Till Date - 直到指定时间（需要设置 `Expiration`） |
 
+## Web3 客户端
+
+SDK 包含两个 Web3 客户端用于链上操作：
+
+### PolymarketWeb3Client（支付 Gas）
+
+```go
+import "github.com/0xNetuser/Polymarket-golang/polymarket/web3"
+
+// 创建 Web3 客户端（需要支付 gas）
+client, err := web3.NewPolymarketWeb3Client(
+    "your-private-key",
+    web3.SignatureTypePolyProxy, // 0=EOA, 1=PolyProxy, 2=Safe
+    137,                         // Chain ID
+    "",                          // RPC URL（空=默认）
+)
+
+// 获取余额
+polBalance, _ := client.GetPOLBalance()
+usdcBalance, _ := client.GetUSDCBalance(common.Address{})
+tokenBalance, _ := client.GetTokenBalance("token-id", common.Address{})
+
+// 设置所有必要的授权
+receipts, _ := client.SetAllApprovals()
+
+// 分割 USDC 为头寸
+receipt, _ := client.SplitPosition(conditionID, 100.0, true) // negRisk=true
+
+// 合并头寸为 USDC
+receipt, _ := client.MergePosition(conditionID, 100.0, true)
+
+// 转账 USDC
+receipt, _ := client.TransferUSDC(recipient, 50.0)
+
+// 转账条件代币
+receipt, _ := client.TransferToken("token-id", recipient, 50.0)
+```
+
+### PolymarketGaslessWeb3Client（无 Gas）
+
+```go
+// 创建无 Gas Web3 客户端（通过中继器交易，无需 gas）
+// 仅支持 signature_type=1 (PolyProxy) 或 signature_type=2 (Safe)
+client, err := web3.NewPolymarketGaslessWeb3Client(
+    "your-private-key",
+    web3.SignatureTypePolyProxy,
+    nil,  // 可选：builder 凭证
+    137,
+    "",
+)
+
+// 与 PolymarketWeb3Client 相同的操作
+receipt, _ := client.SplitPosition(conditionID, 100.0, true)
+receipt, _ := client.MergePosition(conditionID, 100.0, true)
+```
+
 ## 项目结构
 
 ```
@@ -233,9 +289,17 @@ polymarket/
 ├── order_builder/             # 订单构建器
 │   ├── order_builder.go       # 订单构建器实现
 │   └── helpers.go             # 订单构建辅助函数
-└── rfq/                       # RFQ 客户端
-    ├── rfq_client.go          # RFQ 客户端实现
-    └── types.go               # RFQ 类型定义
+├── rfq/                       # RFQ 客户端
+│   ├── rfq_client.go          # RFQ 客户端实现
+│   └── types.go               # RFQ 类型定义
+└── web3/                      # Web3 客户端（链上操作）
+    ├── base_client.go         # 基础 Web3 客户端（共享逻辑）
+    ├── web3_client.go         # PolymarketWeb3Client（支付 gas）
+    ├── gasless_client.go      # PolymarketGaslessWeb3Client（无 gas）
+    ├── types.go               # Web3 类型定义
+    ├── helpers.go             # Web3 辅助函数
+    ├── abi_loader.go          # ABI 加载工具
+    └── abis/                   # 合约 ABI 文件
 ```
 
 ## 已实现功能
@@ -286,6 +350,18 @@ polymarket/
 - [x] `AcceptQuote()` - 接受报价
 - [x] `ApproveOrder()` - 批准订单
 - [x] `GetRfqConfig()` - 获取 RFQ 配置
+
+### ✅ Web3 客户端功能
+- [x] `PolymarketWeb3Client` - 链上交易（支付 gas）
+  - [x] 支持 EOA、PolyProxy 和 Safe 钱包
+  - [x] 余额查询（POL、USDC、条件代币）
+  - [x] 授权管理 (`SetAllApprovals()`)
+  - [x] 头寸操作 (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `ConvertPositions()`)
+  - [x] 代币转账 (`TransferUSDC()`, `TransferToken()`)
+- [x] `PolymarketGaslessWeb3Client` - 无 gas 交易（通过中继器）
+  - [x] 支持 PolyProxy 和 Safe 钱包
+  - [x] 与 Web3Client 相同的操作，无需支付 gas
+  - [x] **需要 Builder 凭证**（从 Polymarket 获取）
 
 ### ✅ 其他功能
 - [x] 订单评分：`IsOrderScoring()`, `AreOrdersScoring()`
