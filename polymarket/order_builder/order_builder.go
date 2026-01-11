@@ -19,9 +19,9 @@ type Signer interface {
 
 // OrderBuilder 订单构建器
 type OrderBuilder struct {
-	signer      Signer
-	sigType     int
-	funder      string
+	signer  Signer
+	sigType int
+	funder  string
 }
 
 // NewOrderBuilder 创建新的订单构建器
@@ -77,22 +77,24 @@ func (ob *OrderBuilder) GetOrderAmounts(side string, size, price float64, roundC
 		return model.SELL, makerAmount, takerAmount, nil
 	}
 
-		return 0, nil, nil, fmt.Errorf("order_args.side must be 'BUY' or 'SELL'")
+	return 0, nil, nil, fmt.Errorf("order_args.side must be 'BUY' or 'SELL'")
 }
 
 // GetMarketOrderAmounts 获取市价订单金额
+// 精度要求（来自 Polymarket API）：
+// - BUY 订单：maker amount (USDC) 最多 4 位小数，taker amount (代币) 最多 2 位小数
+// - SELL 订单：maker amount (代币) 最多 2 位小数，taker amount (USDC) 最多 4 位小数
 func (ob *OrderBuilder) GetMarketOrderAmounts(side string, amount, price float64, roundConfig RoundConfig) (model.Side, *big.Int, *big.Int, error) {
 	rawPrice := RoundNormal(price, roundConfig.Price)
 
 	if side == "BUY" {
+		// BUY: maker = USDC (最多 Amount 位小数), taker = 代币数量 (最多 Size 位小数)
 		rawMakerAmt := RoundDown(amount, roundConfig.Size)
 		rawTakerAmt := rawMakerAmt / rawPrice
 
-		if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
-			rawTakerAmt = RoundUp(rawTakerAmt, roundConfig.Amount+4)
-			if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
-				rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Amount)
-			}
+		// taker amount（代币数量）必须舍入到 Size 位小数（通常是 2 位）
+		if DecimalPlaces(rawTakerAmt) > roundConfig.Size {
+			rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Size)
 		}
 
 		makerAmount := big.NewInt(ToTokenDecimals(rawMakerAmt))
@@ -100,14 +102,13 @@ func (ob *OrderBuilder) GetMarketOrderAmounts(side string, amount, price float64
 
 		return model.BUY, makerAmount, takerAmount, nil
 	} else if side == "SELL" {
+		// SELL: maker = 代币数量 (最多 Size 位小数), taker = USDC (最多 Amount 位小数)
 		rawMakerAmt := RoundDown(amount, roundConfig.Size)
 		rawTakerAmt := rawMakerAmt * rawPrice
 
+		// taker amount（USDC）可以有 Amount 位小数（通常是 4 位）
 		if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
-			rawTakerAmt = RoundUp(rawTakerAmt, roundConfig.Amount+4)
-			if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
-				rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Amount)
-			}
+			rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Amount)
 		}
 
 		makerAmount := big.NewInt(ToTokenDecimals(rawMakerAmt))
@@ -116,7 +117,7 @@ func (ob *OrderBuilder) GetMarketOrderAmounts(side string, amount, price float64
 		return model.SELL, makerAmount, takerAmount, nil
 	}
 
-		return 0, nil, nil, fmt.Errorf("order_args.side must be 'BUY' or 'SELL'")
+	return 0, nil, nil, fmt.Errorf("order_args.side must be 'BUY' or 'SELL'")
 }
 
 // CreateOrder 创建并签名订单（限价订单）
@@ -217,7 +218,7 @@ func (ob *OrderBuilder) BuildSignedOrder(orderData *model.OrderData, exchangeAdd
 	if len(privateKeyHex) > 2 && privateKeyHex[:2] == "0x" {
 		privateKeyHex = privateKeyHex[2:]
 	}
-	
+
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("invalid private key: %w", err)
