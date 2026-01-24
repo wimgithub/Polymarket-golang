@@ -398,6 +398,7 @@ polymarket/
   - [x] 与 Web3Client 相同的操作，无需支付 gas
   - [x] **需要 Builder 凭证**（从 Polymarket 获取）
   - [x] **动态 Relay 地址**：自动从 `/relay-payload` 端点获取当前中继节点地址
+  - [x] **批量赎回**: `RedeemPositions()` - 单次交易赎回多个 conditionId
 
 ### ✅ 其他功能
 - [x] 订单评分：`IsOrderScoring()`, `AreOrdersScoring()`
@@ -439,6 +440,16 @@ polymarket/
 - `TOKEN_ID` (可选): 条件代币余额查询的 token ID
 
 ## 更新日志
+
+### v0.2.4 (2026-01-24)
+
+#### 新功能
+
+- **批量赎回** - 单次 gasless 交易赎回多个 conditionId
+  - 新增 `RedeemRequest` 类型用于批量操作
+  - 新增 `RedeemPositions(requests []RedeemRequest)` 方法
+  - 新增 `ExecuteBatch(calls []ProxyCall)` 方法用于通用批量操作
+  - 减少 relay 调用次数，提高效率
 
 ### v0.2.3 (2026-01-24)
 

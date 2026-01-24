@@ -398,6 +398,7 @@ polymarket/
   - [x] Same operations as Web3Client without gas fees
   - [x] **Requires Builder credentials** (obtained from Polymarket)
   - [x] **Dynamic Relay Address**: Automatically fetches the current relay node address from `/relay-payload` endpoint
+  - [x] **Batch Redeem**: `RedeemPositions()` - Redeem multiple conditionIds in a single transaction
 
 ### ✅ Other Features
 - [x] Order scoring: `IsOrderScoring()`, `AreOrdersScoring()`
@@ -439,6 +440,16 @@ The example programs use the following environment variables:
 - `TOKEN_ID` (optional): Token ID for conditional token balance queries
 
 ## Changelog
+
+### v0.2.4 (2026-01-24)
+
+#### New Features
+
+- **Batch Redeem** - Redeem multiple conditionIds in a single gasless transaction
+  - Added `RedeemRequest` type for batch operations
+  - Added `RedeemPositions(requests []RedeemRequest)` method
+  - Added `ExecuteBatch(calls []ProxyCall)` method for generic batch operations
+  - Reduces relay calls and improves efficiency
 
 ### v0.2.3 (2026-01-24)
 
