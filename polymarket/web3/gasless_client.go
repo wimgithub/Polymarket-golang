@@ -539,4 +539,3 @@ func (c *PolymarketGaslessWeb3Client) ConvertPositions(questionIDs []string, amo
 
 	return c.Execute(to, data, "Convert Positions", "convert")
 }
-
