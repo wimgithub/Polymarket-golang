@@ -391,7 +391,7 @@ polymarket/
   - [x] 支持 EOA、PolyProxy 和 Safe 钱包
   - [x] 余额查询（POL、USDC、条件代币）
   - [x] 授权管理 (`SetAllApprovals()`)
-  - [x] 头寸操作 (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `ConvertPositions()`)
+  - [x] 头寸操作 (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `RedeemPositions()`, `ConvertPositions()`)
   - [x] 代币转账 (`TransferUSDC()`, `TransferToken()`)
 - [x] `PolymarketGaslessWeb3Client` - 无 gas 交易（通过中继器）
   - [x] 支持 PolyProxy 和 Safe 钱包
@@ -441,15 +441,16 @@ polymarket/
 
 ## 更新日志
 
-### v0.2.4 (2026-01-24)
+### v0.2.5 (2026-01-24)
 
 #### 新功能
 
-- **批量赎回** - 单次 gasless 交易赎回多个 conditionId
-  - 新增 `RedeemRequest` 类型用于批量操作
-  - 新增 `RedeemPositions(requests []RedeemRequest)` 方法
-  - 新增 `ExecuteBatch(calls []ProxyCall)` 方法用于通用批量操作
-  - 减少 relay 调用次数，提高效率
+- **统一批量赎回 (Unified Batch Redeem)** - 在有 Gas 和无 Gas 客户端中均支持单笔交易赎回多个 conditionId
+  - 更新了 `RedeemPositions(requests []RedeemRequest)` 以支持 `PolyProxy` 链上单笔打包（此前为串行）
+  - 统一了 `PolymarketWeb3Client` 和 `PolymarketGaslessWeb3Client` 之间的 API
+  - 新增 `ExecuteBatch` 方法用于链上通用的多调用执行
+  - 在 `examples/gasless_batch_redeem` 中新增自动发现并赎回的示例
+  - 大幅降低了大批量头寸管理时的 Gas 成本和交易等待时间
 
 ### v0.2.3 (2026-01-24)
 

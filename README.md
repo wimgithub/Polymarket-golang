@@ -391,7 +391,7 @@ polymarket/
   - [x] Supports EOA, PolyProxy, and Safe wallets
   - [x] Balance queries (POL, USDC, conditional tokens)
   - [x] Approval management (`SetAllApprovals()`)
-  - [x] Position operations (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `ConvertPositions()`)
+  - [x] Position operations (`SplitPosition()`, `MergePosition()`, `RedeemPosition()`, `RedeemPositions()`, `ConvertPositions()`)
   - [x] Token transfers (`TransferUSDC()`, `TransferToken()`)
 - [x] `PolymarketGaslessWeb3Client` - Gasless transactions via relay
   - [x] Supports PolyProxy and Safe wallets
@@ -441,15 +441,16 @@ The example programs use the following environment variables:
 
 ## Changelog
 
-### v0.2.4 (2026-01-24)
+### v0.2.5 (2026-01-24)
 
 #### New Features
 
-- **Batch Redeem** - Redeem multiple conditionIds in a single gasless transaction
-  - Added `RedeemRequest` type for batch operations
-  - Added `RedeemPositions(requests []RedeemRequest)` method
-  - Added `ExecuteBatch(calls []ProxyCall)` method for generic batch operations
-  - Reduces relay calls and improves efficiency
+- **Unified Batch Redeem** - Single transaction redemption for multiple conditionIds in both Gas and Gasless clients
+  - Updated `RedeemPositions(requests []RedeemRequest)` to support single-transaction batching for `PolyProxy` on-chain (previously only serial)
+  - Synced API between `PolymarketWeb3Client` and `PolymarketGaslessWeb3Client`
+  - Added `ExecuteBatch` for generic multi-call execution on-chain
+  - Added auto-discovery example in `examples/gasless_batch_redeem`
+  - Dramatically reduces Gas costs and transaction time for large portfolios
 
 ### v0.2.3 (2026-01-24)
 
