@@ -397,6 +397,7 @@ polymarket/
   - [x] Supports PolyProxy and Safe wallets
   - [x] Same operations as Web3Client without gas fees
   - [x] **Requires Builder credentials** (obtained from Polymarket)
+  - [x] **Dynamic Relay Address**: Automatically fetches the current relay node address from `/relay-payload` endpoint
 
 ### ✅ Other Features
 - [x] Order scoring: `IsOrderScoring()`, `AreOrdersScoring()`
@@ -436,6 +437,21 @@ The example programs use the following environment variables:
 - `CLOB_SECRET` (optional): API secret for L2 authentication
 - `CLOB_PASSPHRASE` (optional): API passphrase for L2 authentication
 - `TOKEN_ID` (optional): Token ID for conditional token balance queries
+
+## Changelog
+
+### v0.2.1 (2026-01-24)
+
+#### Improvements
+
+- **Gasless Web3 Client - Dynamic Relay Address**
+  - Added `getRelayPayload()` method to fetch dynamic relay node address from `/relay-payload` endpoint
+  - Fixed potential transaction failures caused by relay address mismatch
+  - Polymarket's relay service may dynamically assign different relay nodes; the code now fetches the current relay address in real-time instead of using a hardcoded address
+  - Modified `Execute()` method to correctly set target address to `ProxyFactoryAddress` for PolyProxy transactions
+  - Modified `buildProxyRelayTransaction()` to use dynamic relay address for signature generation
+
+
 
 ## References
 

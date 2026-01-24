@@ -397,6 +397,7 @@ polymarket/
   - [x] 支持 PolyProxy 和 Safe 钱包
   - [x] 与 Web3Client 相同的操作，无需支付 gas
   - [x] **需要 Builder 凭证**（从 Polymarket 获取）
+  - [x] **动态 Relay 地址**：自动从 `/relay-payload` 端点获取当前中继节点地址
 
 ### ✅ 其他功能
 - [x] 订单评分：`IsOrderScoring()`, `AreOrdersScoring()`
@@ -436,6 +437,19 @@ polymarket/
 - `CLOB_SECRET` (可选): L2 认证的 API 密钥
 - `CLOB_PASSPHRASE` (可选): L2 认证的 API 密钥
 - `TOKEN_ID` (可选): 条件代币余额查询的 token ID
+
+## 更新日志
+
+### v0.2.1 (2026-01-24)
+
+#### 改进
+
+- **Gasless Web3 客户端 - 动态 Relay 地址**
+  - 新增 `getRelayPayload()` 方法，从 `/relay-payload` 端点获取动态中继节点地址
+  - 修复因 Relay 地址不匹配可能导致的交易失败问题
+  - Polymarket 的中继服务可能会动态分配不同的中继器节点，现在代码会实时获取当前应该使用的 Relay 地址，而不是使用硬编码的固定地址
+  - 修改 `Execute()` 方法，对于 PolyProxy 交易正确设置目标地址为 `ProxyFactoryAddress`
+  - 修改 `buildProxyRelayTransaction()` 方法，使用动态 Relay 地址进行签名
 
 ## 参考
 

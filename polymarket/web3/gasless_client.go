@@ -67,6 +67,9 @@ func (c *PolymarketGaslessWeb3Client) Execute(to common.Address, data []byte, op
 
 	switch c.signatureType {
 	case SignatureTypePolyProxy:
+		// 对于 Proxy 交易，目标地址应该是 ProxyFactoryAddress
+		// 原始 to 地址会被包装在 proxy call 数据中
+		to = ProxyFactoryAddress
 		body, err = c.buildProxyRelayTransaction(to, data, metadata)
 	case SignatureTypeSafe:
 		body, err = c.buildSafeRelayTransaction(to, data, metadata)
@@ -142,9 +145,42 @@ func (c *PolymarketGaslessWeb3Client) getRelayNonce(walletType string) (int, err
 	return nonce, nil
 }
 
+// getRelayPayload 获取中继负载信息（包含动态 Relay 地址和 nonce）
+// 这个方法调用 /relay-payload 端点，返回当前应该使用的 Relay 节点地址和 nonce
+func (c *PolymarketGaslessWeb3Client) getRelayPayload(walletType string) (relayAddress string, nonce int, err error) {
+	url := fmt.Sprintf("%s/relay-payload?address=%s&type=%s", c.relayConfig.RelayURL, c.GetBaseAddress().Hex(), walletType)
+
+	resp, err := c.httpClient.Get(url)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to get relay payload: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", 0, fmt.Errorf("failed to get relay payload: %s", string(body))
+	}
+
+	var result struct {
+		Address string `json:"address"`
+		Nonce   string `json:"nonce"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", 0, fmt.Errorf("failed to decode relay payload response: %w", err)
+	}
+
+	nonceInt, err := strconv.Atoi(result.Nonce)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid nonce value: %w", err)
+	}
+
+	return result.Address, nonceInt, nil
+}
+
 // buildProxyRelayTransaction 构建Proxy中继交易
 func (c *PolymarketGaslessWeb3Client) buildProxyRelayTransaction(to common.Address, data []byte, metadata string) (*RelaySubmitRequest, error) {
-	proxyNonce, err := c.getRelayNonce("PROXY")
+	// 使用 getRelayPayload 获取动态 Relay 地址和 nonce
+	relayAddress, proxyNonce, err := c.getRelayPayload("PROXY")
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +226,7 @@ func (c *PolymarketGaslessWeb3Client) buildProxyRelayTransaction(to common.Addre
 		gasLimit,
 		strconv.Itoa(proxyNonce),
 		c.relayConfig.RelayHub,
-		c.relayConfig.RelayAddress,
+		relayAddress, // 使用动态获取的 Relay 地址
 	)
 
 	structHash := Keccak256Hash(structBytes)
