@@ -67,9 +67,8 @@ func (c *PolymarketGaslessWeb3Client) Execute(to common.Address, data []byte, op
 
 	switch c.signatureType {
 	case SignatureTypePolyProxy:
-		// 对于 Proxy 交易，目标地址应该是 ProxyFactoryAddress
-		// 原始 to 地址会被包装在 proxy call 数据中
-		to = ProxyFactoryAddress
+		// 原始 to 地址会被包装在 ProxyCall 中
+		// ProxyFactoryAddress 只在签名结构和请求中使用
 		body, err = c.buildProxyRelayTransaction(to, data, metadata)
 	case SignatureTypeSafe:
 		body, err = c.buildSafeRelayTransaction(to, data, metadata)
@@ -260,7 +259,7 @@ func (c *PolymarketGaslessWeb3Client) buildProxyRelayTransaction(to common.Addre
 			"gasLimit":   gasLimit,
 			"relayerFee": relayerFee,
 			"relayHub":   c.relayConfig.RelayHub,
-			"relay":      c.relayConfig.RelayAddress,
+			"relay":      relayAddress, // 使用动态获取的 Relay 地址（与签名保持一致）
 		},
 		To:   c.ProxyFactoryAddress.Hex(),
 		Type: "PROXY",

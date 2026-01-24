@@ -440,16 +440,23 @@ polymarket/
 
 ## 更新日志
 
+### v0.2.3 (2026-01-24)
+
+#### Bug 修复
+
+- **Gasless Web3 客户端 - 修复签名验证失败问题**
+  - 修复 `SignatureParams.relay` 使用 `/relay-payload` 端点返回的动态中继地址
+  - 之前签名使用动态中继地址，而 `SignatureParams.relay` 使用静态配置地址，导致签名验证失败
+  - 撤销了错误的 `to = ProxyFactoryAddress` 改动，该改动导致 `ProxyCall.To` 目标地址错误
+  - 现在签名生成和请求参数都使用一致的动态中继地址
+
 ### v0.2.1 (2026-01-24)
 
 #### 改进
 
 - **Gasless Web3 客户端 - 动态 Relay 地址**
   - 新增 `getRelayPayload()` 方法，从 `/relay-payload` 端点获取动态中继节点地址
-  - 修复因 Relay 地址不匹配可能导致的交易失败问题
-  - Polymarket 的中继服务可能会动态分配不同的中继器节点，现在代码会实时获取当前应该使用的 Relay 地址，而不是使用硬编码的固定地址
-  - 修改 `Execute()` 方法，对于 PolyProxy 交易正确设置目标地址为 `ProxyFactoryAddress`
-  - 修改 `buildProxyRelayTransaction()` 方法，使用动态 Relay 地址进行签名
+  - Polymarket 的中继服务可能会动态分配不同的中继器节点，现在代码会实时获取当前应该使用的 Relay 地址
 
 ## 参考
 
