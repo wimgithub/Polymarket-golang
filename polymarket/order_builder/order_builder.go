@@ -89,12 +89,27 @@ func (ob *OrderBuilder) GetMarketOrderAmounts(side string, amount, price float64
 
 	if side == "BUY" {
 		// BUY: maker = USDC (最多 Amount 位小数), taker = 代币数量 (最多 Size 位小数)
+		// 1. 先计算 taker amount (代币数量)
 		rawMakerAmt := RoundDown(amount, roundConfig.Size)
 		rawTakerAmt := rawMakerAmt / rawPrice
 
-		// taker amount（代币数量）必须舍入到 Size 位小数（通常是 2 位）
+		// 2. taker amount（代币数量）必须舍入到 Size 位小数（通常是 2 位）
 		if DecimalPlaces(rawTakerAmt) > roundConfig.Size {
 			rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Size)
+		}
+
+		// 3. 关键修复：反向重新计算 maker amount，确保 maker = taker * price
+		// 这样可以保证 API 验证通过
+		rawMakerAmt = rawTakerAmt * rawPrice
+
+		// 4. 再次检查 maker amount 的精度
+		if DecimalPlaces(rawMakerAmt) > roundConfig.Amount {
+			// 尝试向上舍入一点点，看是否能解决精度问题
+			rawMakerAmt = RoundUp(rawMakerAmt, roundConfig.Amount+4)
+			if DecimalPlaces(rawMakerAmt) > roundConfig.Amount {
+				// 如果还是不行，强制截断
+				rawMakerAmt = RoundDown(rawMakerAmt, roundConfig.Amount)
+			}
 		}
 
 		makerAmount := big.NewInt(ToTokenDecimals(rawMakerAmt))
