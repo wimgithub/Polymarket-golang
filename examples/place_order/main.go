@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/0xNetuser/Polymarket-golang/polymarket"
+	"github.com/wimgithub/Polymarket-golang/polymarket"
 )
 
 func main() {

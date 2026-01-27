@@ -21,7 +21,7 @@ Follow at X:  @netu5er
 ## Installation
 
 ```bash
-go get github.com/0xNetuser/Polymarket-golang
+go get github.com/wimgithub/Polymarket-golang
 ```
 
 ## Quick Start
@@ -33,7 +33,7 @@ package main
 
 import (
     "fmt"
-    "github.com/0xNetuser/Polymarket-golang/polymarket"
+    "github.com/wimgithub/Polymarket-golang/polymarket"
 )
 
 func main() {
@@ -248,7 +248,7 @@ The SDK includes two Web3 clients for on-chain operations:
 ### PolymarketWeb3Client (Pay Gas)
 
 ```go
-import "github.com/0xNetuser/Polymarket-golang/polymarket/web3"
+import "github.com/wimgithub/Polymarket-golang/polymarket/web3"
 
 // Create Web3 client (pays gas for transactions)
 client, err := web3.NewPolymarketWeb3Client(

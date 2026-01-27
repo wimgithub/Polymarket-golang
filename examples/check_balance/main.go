@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/0xNetuser/Polymarket-golang/polymarket"
+	"github.com/wimgithub/Polymarket-golang/polymarket"
 )
 
 func main() {

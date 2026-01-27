@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/0xNetuser/Polymarket-golang/polymarket/web3"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/wimgithub/Polymarket-golang/polymarket/web3"
 )
 
 func main() {
