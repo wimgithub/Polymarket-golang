@@ -121,9 +121,18 @@ func (ob *OrderBuilder) GetMarketOrderAmounts(side string, amount, price float64
 		rawMakerAmt := RoundDown(amount, roundConfig.Size)
 		rawTakerAmt := rawMakerAmt * rawPrice
 
-		// taker amount（USDC）可以有 Amount 位小数（通常是 4 位）
+		// 1. taker amount（USDC）舍入到 Amount 位小数
 		if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
-			rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Amount)
+			rawTakerAmt = RoundUp(rawTakerAmt, roundConfig.Amount+4)
+			if DecimalPlaces(rawTakerAmt) > roundConfig.Amount {
+				rawTakerAmt = RoundDown(rawTakerAmt, roundConfig.Amount)
+			}
+		}
+
+		// 2. 关键修复：反向重算 maker amount，确保 maker * price == taker
+		rawMakerAmt = rawTakerAmt / rawPrice
+		if DecimalPlaces(rawMakerAmt) > roundConfig.Size {
+			rawMakerAmt = RoundDown(rawMakerAmt, roundConfig.Size)
 		}
 
 		makerAmount := big.NewInt(ToTokenDecimals(rawMakerAmt))
